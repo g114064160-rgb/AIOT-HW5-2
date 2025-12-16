@@ -40,6 +40,11 @@ docker run -it --rm \
 2. 貼上 `ai-automation-workflow.json` 內容或上傳檔案。
 3. 儲存後啟用 Workflow。
 
+**Streamlit 用戶端（選用）**
+- 安裝依賴：`pip install -r requirements.txt`
+- 啟動：`streamlit run app.py`
+- 如需修改 Webhook URL，於 UI 側欄或 `.env`/`.env.example` 中設定 `N8N_WEBHOOK_URL`。
+
 ### 5) 環境變數與憑證設定
 - 在 n8n Credentials → OpenAI API 建立憑證，填入 `OPENAI_API_KEY`。
 - 若用 .env（供 Docker 或本機）：  
