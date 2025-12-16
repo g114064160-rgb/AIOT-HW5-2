@@ -1,0 +1,128 @@
+{
+  "name": "AI Automation Hub",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-automation",
+        "responseMode": "lastNode",
+        "options": {
+          "responseContentType": "application/json"
+        }
+      },
+      "id": "1",
+      "name": "HTTP Trigger",
+      "type": "n8n-nodes-base.httpTrigger",
+      "typeVersion": 2.1,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "ai-automation-hook"
+    },
+    {
+      "parameters": {
+        "functionCode": "const body = $json;\nconst text = (body.text || '').trim();\nconst targetLang = (body.targetLang || 'en').trim();\nconst style = (body.style || 'concise').trim();\nconst user = (body.user || 'user').trim();\nconst opRaw = (body.operation || 'summarize').toLowerCase().trim();\n\nconst allowed = ['summarize', 'translate', 'reply', 'note'];\nconst operation = allowed.includes(opRaw) ? opRaw : 'summarize';\n\nif (!text) {\n  throw new Error('Missing required field: text');\n}\n\nlet task = '';\nswitch (operation) {\n  case 'translate':\n    task = `å°‡ä»¥ä¸‹æ??¬ç¿»è­¯æ? ${targetLang}ï¼Œä??å??è?å°ˆæ??è?ï¼š\\n${text}`;\n    break;\n  case 'reply':\n    task = `ä»¥å®¢???©ç???»?è?ä¸‹å?è¨Šæ¯ï¼Œè?æ°?${style}ï¼Œå?è¦æ??ä?å»ºè­°ï¼š\\n${text}`;\n    break;\n  case 'note':\n    task = `å°‡ä»¥ä¸‹å…§å®¹æ•´?†ç‚ºè¡Œå?ç­†è?ï¼Œå??«é?é»ã€å?è¾¦è??ªæ­¢?‚é?ï¼ˆè‹¥?‰ï?ï¼Œä½¿??${targetLang}ï¼š\\n${text}`;\n    break;\n  default:\n    task = `è«‹æ?è¦ä»¥ä¸‹å…§å®¹ï??ä? 3-5 ?‹è?é»è?ä¸€??TL;DRï¼Œä½¿??${targetLang}ï¼š\\n${text}`;\n    break;\n}\n\nconst prompt = [\n  'ä½ æ˜¯ n8n ä¸­ç? AI ?ªå??–åŠ©?‹ï?è«‹ç”¨ Markdown ?¢å‡ºæ¸…æ™°çµæ???,\n  `ä½¿ç”¨?…ï?${user}`,\n  `ä»»å?ï¼?{task}`,\n  'ä¿æ??¯è?è£½ç?è¼¸å‡º?¼å?ï¼Œé¿?å?é¤˜å??„ã€?\n].join('\\n');\n\nreturn [{ prompt, meta: { operation, targetLang, style, user } }];"
+      },
+      "name": "Prepare Prompt",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "id": "2"
+    },
+    {
+      "parameters": {
+        "operation": "chat",
+        "chatModel": "gpt-4o-mini",
+        "temperature": 0.2,
+        "maxTokens": 800,
+        "messages": [
+          {
+            "role": "system",
+            "content": "ä½ æ˜¯å°ˆæ¥­?„å?èª?AI ?©ç?ï¼Œé??ä?ç²¾æ??ç???Token ?„å??‰ã€?
+          },
+          {
+            "role": "user",
+            "content": "={{$json[\"prompt\"]}}"
+          }
+        ]
+      },
+      "name": "OpenAI Chat",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.4,
+      "position": [
+        740,
+        300
+      ],
+      "id": "3",
+      "credentials": {
+        "openAiApi": {
+          "id": "__REPLACE_WITH_YOUR_CREDENTIAL_ID__",
+          "name": "OpenAI Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {},
+        "responseBody": "={\"operation\":\"{{$json[\"meta\"] ? $json[\"meta\"][\"operation\"] : $json[\"operation\"] || \"summarize\"}}\",\"result\":\"{{ $json[\"choices\"] && $json[\"choices\"][0] ? $json[\"choices\"][0][\"message\"][\"content\"] : $json[\"text\"] || $json[\"data\"] || \"\" }}\",\"model\":\"{{ $json[\"model\"] || \"gpt-4o-mini\" }}\"}"
+      },
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        300
+      ],
+      "id": "4"
+    }
+  ],
+  "connections": {
+    "HTTP Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Prompt": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": [
+    {
+      "id": "workflow",
+      "name": "ai-automation"
+    }
+  ]
+}
