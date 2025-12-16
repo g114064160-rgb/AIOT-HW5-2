@@ -1,5 +1,6 @@
 {
   "name": "AI Automation Hub",
+  "active": false,
   "nodes": [
     {
       "parameters": {

@@ -1,5 +1,6 @@
 {
   "name": "AI Automation Hub",
+  "active": false,
   "nodes": [
     {
       "parameters": {
@@ -22,7 +23,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const body = $json;\nconst text = (body.text || '').trim();\nconst targetLang = (body.targetLang || 'en').trim();\nconst style = (body.style || 'concise').trim();\nconst user = (body.user || 'user').trim();\nconst opRaw = (body.operation || 'summarize').toLowerCase().trim();\n\nconst allowed = ['summarize', 'translate', 'reply', 'note'];\nconst operation = allowed.includes(opRaw) ? opRaw : 'summarize';\n\nif (!text) {\n  throw new Error('Missing required field: text');\n}\n\nlet task = '';\nswitch (operation) {\n  case 'translate':\n    task = `將以下�??�翻譯�? ${targetLang}，�??��??��?專�??��?：\\n${text}`;\n    break;\n  case 'reply':\n    task = `以客???��???��?��?下�?訊息，�?�?${style}，�?要�??��?建議：\\n${text}`;\n    break;\n  case 'note':\n    task = `將以下內容整?�為行�?筆�?，�??��?點、�?辦�??�止?��?（若?��?，使??${targetLang}：\\n${text}`;\n    break;\n  default:\n    task = `請�?要以下內容�??��? 3-5 ?��?點�?一??TL;DR，使??${targetLang}：\\n${text}`;\n    break;\n}\n\nconst prompt = [\n  '你是 n8n 中�? AI ?��??�助?��?請用 Markdown ?�出清晰結�???,\n  `使用?��?${user}`,\n  `任�?�?{task}`,\n  '保�??��?製�?輸出?��?，避?��?餘�??��?\n].join('\\n');\n\nreturn [{ prompt, meta: { operation, targetLang, style, user } }];"
+        "functionCode": "const body = $json;\nconst text = (body.text || '').trim();\nconst targetLang = (body.targetLang || 'en').trim();\nconst style = (body.style || 'concise').trim();\nconst user = (body.user || 'user').trim();\nconst opRaw = (body.operation || 'summarize').toLowerCase().trim();\n\nconst allowed = ['summarize', 'translate', 'reply', 'note'];\nconst operation = allowed.includes(opRaw) ? opRaw : 'summarize';\n\nif (!text) {\n  throw new Error('Missing required field: text');\n}\n\nlet task = '';\nswitch (operation) {\n  case 'translate':\n    task = `將以下文本翻譯成 ${targetLang}，保持原意與專有名詞：\\n${text}`;\n    break;\n  case 'reply':\n    task = `以客服/助理口吻回覆下列訊息，語氣 ${style}，必要時提供建議：\\n${text}`;\n    break;\n  case 'note':\n    task = `將以下內容整理為行動筆記，包含重點、待辦與截止時間（若有），使用 ${targetLang}：\\n${text}`;\n    break;\n  default:\n    task = `請摘要以下內容，提供 3-5 個要點與一句 TL;DR，使用 ${targetLang}：\\n${text}`;\n    break;\n}\n\nconst prompt = [\n  '你是 n8n 中的 AI 自動化助手，請用 Markdown 產出清晰結果。',\n  `使用者：${user}`,\n  `任務：${task}`,\n  '保持可複製的輸出格式，避免多餘寒暄。'\n].join('\\n');\n\nreturn [{ prompt, meta: { operation, targetLang, style, user } }];"
       },
       "name": "Prepare Prompt",
       "type": "n8n-nodes-base.function",
@@ -42,7 +43,7 @@
         "messages": [
           {
             "role": "system",
-            "content": "你是專業?��?�?AI ?��?，�??��?精�??��???Token ?��??��?
+            "content": "你是專業的多語 AI 助理，需提供精準、節省 Token 的回應。"
           },
           {
             "role": "user",
